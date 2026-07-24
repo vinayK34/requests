@@ -25,7 +25,7 @@ class CaseInsensitiveDict(MutableMapping[str, _VT], Generic[_VT]):
     provides ``lower_items``.
 
     All keys are expected to be strings. The structure remembers the
-    case of the last key to be set, and ``iter(instance)``,
+    case of the last key to be set, and ``iter(instance)``, 
     ``keys()``, ``items()``, ``iterkeys()``, and ``iteritems()``
     will contain case-sensitive keys. However, querying and contains
     testing is case insensitive::
@@ -108,17 +108,16 @@ class LookupDict(dict[str, _VT]):
     def __getattr__(self, key: str) -> _VT | None:
         # We need this for type checkers to infer typing
         # on attribute access with status_codes.py
-        if key in self.__dict__:
-            return self.__dict__[key]
-        else:
+        try:
+            return self[key]
+        except KeyError:
             raise AttributeError(
                 f"'{type(self).__name__}' object has no attribute '{key}'"
             )
 
     def __getitem__(self, key: str) -> _VT | None:  # type: ignore[override]
         # We allow fall-through here, so values default to None
-
-        return self.__dict__.get(key, None)
+        return super().__getitem__(key)
 
     @overload
     def get(self, key: str, default: None = None) -> _VT | None: ...
@@ -127,4 +126,4 @@ class LookupDict(dict[str, _VT]):
     def get(self, key: str, default: _D | _VT) -> _D | _VT: ...
 
     def get(self, key: str, default: _D | None = None) -> _VT | _D | None:
-        return self.__dict__.get(key, default)
+        return super().get(key, default)
