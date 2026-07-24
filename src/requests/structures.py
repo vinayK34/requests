@@ -106,19 +106,21 @@ class LookupDict(dict[str, _VT]):
         return f"<lookup '{self.name}'>"
 
     def __getattr__(self, key: str) -> _VT | None:
-        # We need this for type checkers to infer typing
-        # on attribute access with status_codes.py
-        if key in self.__dict__:
-            return self.__dict__[key]
-        else:
+        # Return the value from the dict storage to maintain consistency
+        # This fixes the inconsistency where __getattr__ was using __dict__
+        # instead of the actual dict storage
+        try:
+            return self[key]  # Use dict's __getitem__ for consistency
+        except KeyError:
             raise AttributeError(
                 f"'{type(self).__name__}' object has no attribute '{key}'"
             )
 
     def __getitem__(self, key: str) -> _VT | None:  # type: ignore[override]
-        # We allow fall-through here, so values default to None
-
-        return self.__dict__.get(key, None)
+        # Use the dict's own get method to ensure consistency with __getattr__
+        # This fixes the original issue where __getitem__ was using __dict__.get()
+        # instead of the actual dict storage
+        return super().get(key, None)
 
     @overload
     def get(self, key: str, default: None = None) -> _VT | None: ...
@@ -127,4 +129,5 @@ class LookupDict(dict[str, _VT]):
     def get(self, key: str, default: _D | _VT) -> _D | _VT: ...
 
     def get(self, key: str, default: _D | None = None) -> _VT | _D | None:
-        return self.__dict__.get(key, default)
+        # Use the dict's own get method to ensure consistency with __getitem__ and __getattr__
+        return super().get(key, default)
